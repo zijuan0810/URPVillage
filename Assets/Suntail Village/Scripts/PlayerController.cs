@@ -15,43 +15,63 @@ namespace Suntail
             public Texture2D[] groundTextures;
             public AudioClip[] footstepSounds;
         }
-        
-        [Header("Movement")]
 
+        public FloatingJoystick joystickRight;
+        public FloatingJoystick joystickLeft;
+
+        [Header("Movement")]
         [Tooltip("Basic controller speed")]
-        [SerializeField] private float walkSpeed;
-        
+        [SerializeField]
+        private float walkSpeed;
+
         [Tooltip("Running controller speed")]
-        [SerializeField] private float runMultiplier;
+        [SerializeField]
+        private float runMultiplier;
 
         [Tooltip("Force of the jump with which the controller rushes upwards")]
-        [SerializeField] private float jumpForce;
+        [SerializeField]
+        private float jumpForce;
 
         [Tooltip("Gravity, pushing down controller when it jumping")]
-        [SerializeField] private float gravity = -9.81f;
+        [SerializeField]
+        private float gravity = -9.81f;
 
-        [Header("Mouse Look")] 
-        [SerializeField] private Camera playerCamera;
-        [SerializeField] private float mouseSensivity;
-        [SerializeField] private float mouseVerticalClamp;
+        [Header("Mouse Look")]
+        [SerializeField]
+        private Camera playerCamera;
+
+        [SerializeField]
+        private float mouseSensivity;
+
+        [SerializeField]
+        private float mouseVerticalClamp;
 
         [Header("Keybinds")]
-        [SerializeField] private KeyCode jumpKey = KeyCode.Space;
-        [SerializeField] private KeyCode runKey = KeyCode.LeftShift;
+        [SerializeField]
+        private KeyCode jumpKey = KeyCode.Space;
+
+        [SerializeField]
+        private KeyCode runKey = KeyCode.LeftShift;
 
 
         [Header("Footsteps")]
         [Tooltip("Footstep source")]
-        [SerializeField] private AudioSource footstepSource;
+        [SerializeField]
+        private AudioSource footstepSource;
 
         [Tooltip("Distance for ground texture checker")]
-        [SerializeField] private float groundCheckDistance = 1.0f;
+        [SerializeField]
+        private float groundCheckDistance = 1.0f;
 
         [Tooltip("Footsteps playing rate")]
-        [SerializeField] [Range(1f, 2f)] private float footstepRate = 1f;
+        [SerializeField]
+        [Range(1f, 2f)]
+        private float footstepRate = 1f;
 
         [Tooltip("Footstep rate when player running")]
-        [SerializeField] [Range(1f, 2f)] private float runningFootstepRate = 1.5f;
+        [SerializeField]
+        [Range(1f, 2f)]
+        private float runningFootstepRate = 1.5f;
 
         [Tooltip("Add textures for this layer and add sounds to be played for this texture")]
         public List<GroundLayer> groundLayers = new List<GroundLayer>();
@@ -64,7 +84,7 @@ namespace Suntail
         private Vector3 _velocity;
         private CharacterController _characterController;
         private bool _isRunning;
-        
+
         //Private mouselook variables
         private float _verticalRotation;
         private float _yAxis;
@@ -79,13 +99,13 @@ namespace Suntail
         private Texture2D _currentTexture;
         private RaycastHit _groundHit;
         private float _nextFootstep;
-        
+
         private void Awake()
         {
             _characterController = GetComponent<CharacterController>();
             GetTerrainData();
-            Cursor.lockState = CursorLockMode.Locked;
-            Cursor.visible = false;
+            // Cursor.lockState = CursorLockMode.Locked;
+            // Cursor.visible = false;
         }
 
         //Getting all terrain data for footstep system
@@ -94,8 +114,9 @@ namespace Suntail
             if (Terrain.activeTerrain)
             {
                 _terrain = Terrain.activeTerrain;
-                _terrainData = _terrain.terrainData;
-                _terrainLayers = _terrain.terrainData.terrainLayers;
+                var terrainData = _terrain.terrainData;
+                _terrainData = terrainData;
+                _terrainLayers = terrainData.terrainLayers;
             }
         }
 
@@ -113,30 +134,29 @@ namespace Suntail
             {
                 _velocity.y = -2f;
             }
-            
+
             if (Input.GetKey(jumpKey) && _characterController.isGrounded)
             {
                 _velocity.y = Mathf.Sqrt(jumpForce * -2f * gravity);
             }
-            
-            _horizontalMovement = Input.GetAxis("Horizontal");
-            _verticalMovement = Input.GetAxis("Vertical");
+
+            _horizontalMovement = joystickRight.Horizontal; //Input.GetAxis("Horizontal");
+            _verticalMovement = joystickRight.Vertical; //Input.GetAxis("Vertical");
 
             _moveDirection = transform.forward * _verticalMovement + transform.right * _horizontalMovement;
-            
+
             _isRunning = Input.GetKey(runKey);
             _currentSpeed = walkSpeed * (_isRunning ? runMultiplier : 1f);
             _characterController.Move(_moveDirection * _currentSpeed * Time.deltaTime);
 
             _velocity.y += gravity * Time.deltaTime;
             _characterController.Move(_velocity * Time.deltaTime);
-
         }
 
         private void MouseLook()
-        {   
-            _xAxis = Input.GetAxis("Mouse X"); 
-            _yAxis = Input.GetAxis("Mouse Y");
+        {
+            _xAxis = joystickLeft.Horizontal; // Input.GetAxis("Mouse X");
+            _yAxis = joystickLeft.Vertical; // Input.GetAxis("Mouse Y");
 
             _verticalRotation += -_yAxis * mouseSensivity;
             _verticalRotation = Mathf.Clamp(_verticalRotation, -mouseVerticalClamp, mouseVerticalClamp);
@@ -158,6 +178,7 @@ namespace Suntail
                         _nextFootstep = 0;
                     }
                 }
+
                 _nextFootstep += (currentFootstepRate * walkSpeed);
             }
         }
@@ -174,6 +195,7 @@ namespace Suntail
                 {
                     _currentTexture = _terrainLayers[GetTerrainTexture(transform.position)].diffuseTexture;
                 }
+
                 if (_groundHit.collider.GetComponent<Renderer>())
                 {
                     _currentTexture = GetRendererTexture();
@@ -203,8 +225,10 @@ namespace Suntail
             _terrainData = _terrain.terrainData;
             Vector3 terrainPosition = _terrain.transform.position;
 
-            int positionX = (int)(((controllerPosition.x - terrainPosition.x) / _terrainData.size.x) * _terrainData.alphamapWidth);
-            int positionZ = (int)(((controllerPosition.z - terrainPosition.z) / _terrainData.size.z) * _terrainData.alphamapHeight);
+            int positionX = (int) (((controllerPosition.x - terrainPosition.x) / _terrainData.size.x) *
+                                   _terrainData.alphamapWidth);
+            int positionZ = (int) (((controllerPosition.z - terrainPosition.z) / _terrainData.size.z) *
+                                   _terrainData.alphamapHeight);
 
             float[,,] layerData = _terrainData.GetAlphamaps(positionX, positionZ, 1, 1);
 
@@ -213,6 +237,7 @@ namespace Suntail
             {
                 texturesArray[n] = layerData[0, 0, n];
             }
+
             return texturesArray;
         }
 
@@ -225,13 +250,13 @@ namespace Suntail
 
             for (int n = 0; n < array.Length; ++n)
             {
-
                 if (array[n] > maxArray)
                 {
                     maxArrayIndex = n;
                     maxArray = array[n];
                 }
             }
+
             return maxArrayIndex;
         }
 
@@ -239,7 +264,7 @@ namespace Suntail
         private Texture2D GetRendererTexture()
         {
             Texture2D texture;
-            texture = (Texture2D)_groundHit.collider.gameObject.GetComponent<Renderer>().material.mainTexture;
+            texture = (Texture2D) _groundHit.collider.gameObject.GetComponent<Renderer>().material.mainTexture;
             return texture;
         }
 
@@ -257,6 +282,7 @@ namespace Suntail
 
                 attempts--;
             }
+
             _previousClip = selectedClip;
             return selectedClip;
         }
