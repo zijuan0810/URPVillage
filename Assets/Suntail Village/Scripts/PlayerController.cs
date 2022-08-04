@@ -1,5 +1,9 @@
+using System;
 using System.Collections.Generic;
+using System.Globalization;
+using TMPro;
 using UnityEngine;
+using Random = UnityEngine.Random;
 
 /*Simple player movement controller, based on character controller component, 
 with footstep system based on check the current texture of the component*/
@@ -8,7 +12,7 @@ namespace Suntail
     public class PlayerController : MonoBehaviour
     {
         //Variables for footstep system list
-        [System.Serializable]
+        [Serializable]
         public class GroundLayer
         {
             public string layerName;
@@ -16,6 +20,7 @@ namespace Suntail
             public AudioClip[] footstepSounds;
         }
 
+        public TextMeshProUGUI fpsText;
         public FloatingJoystick joystickRight;
         public FloatingJoystick joystickLeft;
 
@@ -99,6 +104,10 @@ namespace Suntail
         private Texture2D _currentTexture;
         private RaycastHit _groundHit;
         private float _nextFootstep;
+        
+        // for fps calculation.
+        private int _frameCount;
+        private float _elapsedTime;
 
         private void Awake()
         {
@@ -106,6 +115,24 @@ namespace Suntail
             GetTerrainData();
             // Cursor.lockState = CursorLockMode.Locked;
             // Cursor.visible = false;
+        }
+
+        private void Start()
+        {
+            fpsText.text = "0";
+        }
+
+        private void LateUpdate()
+        {
+            _frameCount++;
+            _elapsedTime += Time.deltaTime;
+            if (_elapsedTime > 0.5f)
+            {
+                var frameRate = Math.Round(_frameCount / _elapsedTime, 1, MidpointRounding.AwayFromZero);
+                _frameCount = 0;
+                _elapsedTime = 0;
+                fpsText.text = $"{frameRate}";
+            }
         }
 
         //Getting all terrain data for footstep system
@@ -170,7 +197,6 @@ namespace Suntail
             if (_characterController.isGrounded && (_horizontalMovement != 0 || _verticalMovement != 0))
             {
                 float currentFootstepRate = (_isRunning ? runningFootstepRate : footstepRate);
-
                 if (_nextFootstep >= 100f)
                 {
                     {
@@ -192,14 +218,10 @@ namespace Suntail
             if (Physics.Raycast(checkerRay, out _groundHit, groundCheckDistance))
             {
                 if (_groundHit.collider.GetComponent<Terrain>())
-                {
                     _currentTexture = _terrainLayers[GetTerrainTexture(transform.position)].diffuseTexture;
-                }
 
                 if (_groundHit.collider.GetComponent<Renderer>())
-                {
                     _currentTexture = GetRendererTexture();
-                }
             }
         }
 
@@ -211,9 +233,7 @@ namespace Suntail
                 for (int k = 0; k < groundLayers[i].groundTextures.Length; k++)
                 {
                     if (_currentTexture == groundLayers[i].groundTextures[k])
-                    {
                         footstepSource.PlayOneShot(RandomClip(groundLayers[i].footstepSounds));
-                    }
                 }
             }
         }
@@ -234,9 +254,7 @@ namespace Suntail
 
             float[] texturesArray = new float[layerData.GetUpperBound(2) + 1];
             for (int n = 0; n < texturesArray.Length; ++n)
-            {
                 texturesArray[n] = layerData[0, 0, n];
-            }
 
             return texturesArray;
         }
@@ -263,27 +281,24 @@ namespace Suntail
         //Returns the current main texture of renderer where the controller is located now
         private Texture2D GetRendererTexture()
         {
-            Texture2D texture;
-            texture = (Texture2D) _groundHit.collider.gameObject.GetComponent<Renderer>().material.mainTexture;
-            return texture;
+            return _groundHit.collider.gameObject.GetComponent<Renderer>().material.mainTexture as Texture2D;
         }
 
         //Returns an audio clip from an array, prevents a newly played clip from being repeated and randomize pitch
         private AudioClip RandomClip(AudioClip[] clips)
         {
-            int attempts = 2;
             footstepSource.pitch = Random.Range(0.9f, 1.1f);
 
+            int attempts = 2;
             AudioClip selectedClip = clips[Random.Range(0, clips.Length)];
-
             while (selectedClip == _previousClip && attempts > 0)
             {
                 selectedClip = clips[Random.Range(0, clips.Length)];
-
                 attempts--;
             }
 
             _previousClip = selectedClip;
+            
             return selectedClip;
         }
     }
