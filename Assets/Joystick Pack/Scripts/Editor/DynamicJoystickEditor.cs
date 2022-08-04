@@ -18,9 +18,9 @@ public class DynamicJoystickEditor : JoystickEditor
     {
         base.OnInspectorGUI();
 
-        if (background != null)
+        if (m_Background != null)
         {
-            RectTransform backgroundRect = (RectTransform)background.objectReferenceValue;
+            RectTransform backgroundRect = (RectTransform)m_Background.objectReferenceValue;
             backgroundRect.anchorMax = Vector2.zero;
             backgroundRect.anchorMin = Vector2.zero;
             backgroundRect.pivot = center;

@@ -21,9 +21,9 @@ public class VariableJoystickEditor : JoystickEditor
     {
         base.OnInspectorGUI();
 
-        if (background != null)
+        if (m_Background != null)
         {
-            RectTransform backgroundRect = (RectTransform)background.objectReferenceValue;
+            RectTransform backgroundRect = (RectTransform)m_Background.objectReferenceValue;
             backgroundRect.pivot = center;
         }
     }
