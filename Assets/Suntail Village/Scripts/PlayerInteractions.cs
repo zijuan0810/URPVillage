@@ -8,41 +8,73 @@ namespace Suntail
     {
         [Header("Interaction variables")]
         [Tooltip("Layer mask for interactive objects")]
-        [SerializeField] private LayerMask interactionLayer;
+        [SerializeField]
+        private LayerMask interactionLayer;
+
         [Tooltip("Maximum distance from player to object of interaction")]
-        [SerializeField] private float interactionDistance = 3f;
+        [SerializeField]
+        private float interactionDistance = 3f;
+
         [Tooltip("Tag for door object")]
-        [SerializeField] private string doorTag = "Door";
+        [SerializeField]
+        private string doorTag = "Door";
+
         [Tooltip("Tag for pickable object")]
-        [SerializeField] private string itemTag = "Item";
+        [SerializeField]
+        private string itemTag = "Item";
+
         [Tooltip("The player's main camera")]
-        [SerializeField] private Camera mainCamera;
+        [SerializeField]
+        private Camera mainCamera;
+
         [Tooltip("Parent object where the object to be lifted becomes")]
-        [SerializeField] private Transform pickupParent;
+        [SerializeField]
+        private Transform pickupParent;
 
         [Header("Keybinds")]
         [Tooltip("Interaction key")]
-        [SerializeField] private KeyCode interactionKey = KeyCode.E;
+        [SerializeField]
+        private KeyCode interactionKey = KeyCode.E;
 
         [Header("Object Following")]
         [Tooltip("Minimum speed of the lifted object")]
-        [SerializeField] private float minSpeed = 0;
+        [SerializeField]
+        private float minSpeed = 0;
+
         [Tooltip("Maximum speed of the lifted object")]
-        [SerializeField] private float maxSpeed = 3000f;
+        [SerializeField]
+        private float maxSpeed = 3000f;
 
         [Header("UI")]
+        [SerializeField]
+        private Image m_AimWhite;
+        
+        [SerializeField]
+        private Image m_AimGreen;
+        
         [Tooltip("Background object for text")]
-        [SerializeField] private Image uiPanel;
+        [SerializeField]
+        private Image uiPanel;
+
         [Tooltip("Text holder")]
-        [SerializeField] private Text panelText;
+        [SerializeField]
+        private Text panelText;
+
         [Tooltip("Text when an object can be lifted")]
-        [SerializeField] private string itemPickUpText;
+        [SerializeField]
+        private string itemPickUpText;
+
         [Tooltip("Text when an object can be drop")]
-        [SerializeField] private string itemDropText;
+        [SerializeField]
+        private string itemDropText;
+
         [Tooltip("Text when the door can be opened")]
-        [SerializeField] private string doorOpenText;
+        [SerializeField]
+        private string doorOpenText;
+
         [Tooltip("Text when the door can be closed")]
-        [SerializeField] private string doorCloseText;
+        [SerializeField]
+        private string doorCloseText;
 
         //Private variables.
         private PhysicsObject _physicsObject;
@@ -72,10 +104,10 @@ namespace Suntail
         //Determine which object we are now looking at, depending on the tag and component
         private void Interactions()
         {
-            _raycastPosition = mainCamera.ScreenToWorldPoint(new Vector3(Screen.width / 2, Screen.height / 2, 0));
+            _raycastPosition = mainCamera.ScreenToWorldPoint(new Vector3(Screen.width / 2f, Screen.height / 2f, 0));
             RaycastHit interactionHit;
-            if (Physics.Raycast(_raycastPosition, mainCamera.transform.forward, 
-                out interactionHit, interactionDistance, interactionLayer))
+            if (Physics.Raycast(_raycastPosition, mainCamera.transform.forward,
+                    out interactionHit, interactionDistance, interactionLayer))
             {
                 if (interactionHit.collider.CompareTag(itemTag))
                 {
@@ -97,6 +129,8 @@ namespace Suntail
                 _lookDoor = null;
                 _lookObject = null;
                 uiPanel.gameObject.SetActive(false);
+                m_AimGreen.gameObject.SetActive(false);
+                m_AimWhite.gameObject.SetActive(true);
             }
 
             if (Input.GetKeyDown(interactionKey))
@@ -171,6 +205,8 @@ namespace Suntail
         private void ShowDoorUI()
         {
             uiPanel.gameObject.SetActive(true);
+            m_AimGreen.gameObject.SetActive(true);
+            m_AimWhite.gameObject.SetActive(false);
 
             if (_lookDoor.doorOpen)
             {
@@ -185,6 +221,8 @@ namespace Suntail
         private void ShowItemUI()
         {
             uiPanel.gameObject.SetActive(true);
+            m_AimGreen.gameObject.SetActive(true);
+            m_AimWhite.gameObject.SetActive(false);
 
             if (_currentlyPickedUpObject == null)
             {
@@ -194,8 +232,6 @@ namespace Suntail
             {
                 panelText.text = itemDropText;
             }
-
         }
-
     }
 }

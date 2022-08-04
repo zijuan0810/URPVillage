@@ -21,13 +21,7 @@ namespace Suntail
         private Text blackScreenText2;
 
         [SerializeField]
-        private Text hintText;
-
-        [SerializeField]
         private float blackScreenDuration = 3f;
-
-        [SerializeField]
-        private float hintDuration = 14f;
 
         [SerializeField]
         private float fadingDuration = 2f;
@@ -37,11 +31,9 @@ namespace Suntail
             blackScreenImage.gameObject.SetActive(true);
             blackScreenText1.gameObject.SetActive(true);
             blackScreenText2.gameObject.SetActive(true);
-            hintText.gameObject.SetActive(true);
             _audioMixer.SetFloat("soundsVolume", -80f);
 
             StartCoroutine(ShowBlackScreen());
-            StartCoroutine(ShowHintText());
         }
 
         private IEnumerator ShowBlackScreen()
@@ -54,12 +46,6 @@ namespace Suntail
             blackScreenText1.CrossFadeAlpha(0, fadingDuration, false);
             blackScreenText2.CrossFadeAlpha(0, fadingDuration, false);
             StartCoroutine(StartAudioFade(_audioMixer, "soundsVolume", fadingDuration, 1f));
-        }
-
-        private IEnumerator ShowHintText()
-        {
-            yield return new WaitForSeconds(hintDuration);
-            hintText.CrossFadeAlpha(0, fadingDuration, false);
         }
 
         //Sound fading

@@ -3,19 +3,33 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
+public enum JoystickType
+{
+    Fixed,
+    Floating,
+    Dynamic
+}
+
 public class VariableJoystick : Joystick
 {
-    public float MoveThreshold { get { return moveThreshold; } set { moveThreshold = Mathf.Abs(value); } }
+    public float MoveThreshold
+    {
+        get { return moveThreshold; }
+        set { moveThreshold = Mathf.Abs(value); }
+    }
 
-    [SerializeField] private float moveThreshold = 1;
-    [SerializeField] private JoystickType joystickType = JoystickType.Fixed;
+    [SerializeField]
+    private float moveThreshold = 1;
+
+    [SerializeField]
+    private JoystickType joystickType = JoystickType.Fixed;
 
     private Vector2 fixedPosition = Vector2.zero;
 
     public void SetMode(JoystickType joystickType)
     {
         this.joystickType = joystickType;
-        if(joystickType == JoystickType.Fixed)
+        if (joystickType == JoystickType.Fixed)
         {
             m_Background.anchoredPosition = fixedPosition;
             m_Background.gameObject.SetActive(true);
@@ -33,17 +47,18 @@ public class VariableJoystick : Joystick
 
     public override void OnPointerDown(PointerEventData eventData)
     {
-        if(joystickType != JoystickType.Fixed)
+        if (joystickType != JoystickType.Fixed)
         {
             m_Background.anchoredPosition = ScreenPointToAnchoredPosition(eventData.position);
             m_Background.gameObject.SetActive(true);
         }
+
         base.OnPointerDown(eventData);
     }
 
     public override void OnPointerUp(PointerEventData eventData)
     {
-        if(joystickType != JoystickType.Fixed)
+        if (joystickType != JoystickType.Fixed)
             m_Background.gameObject.SetActive(false);
 
         base.OnPointerUp(eventData);
@@ -56,8 +71,7 @@ public class VariableJoystick : Joystick
             Vector2 difference = normalised * (magnitude - moveThreshold) * radius;
             m_Background.anchoredPosition += difference;
         }
+
         base.HandleInput(magnitude, normalised, radius, cam);
     }
 }
-
-public enum JoystickType { Fixed, Floating, Dynamic }
