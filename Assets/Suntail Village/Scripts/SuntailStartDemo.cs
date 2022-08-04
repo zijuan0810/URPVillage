@@ -8,18 +8,29 @@ namespace Suntail
 {
     public class SuntailStartDemo : MonoBehaviour
     {
-        [SerializeField] private AudioMixer _audioMixer;
-        [SerializeField] private Image blackScreenImage;
-        [SerializeField] private Text blackScreenText1;
-        [SerializeField] private Text blackScreenText2;
-        [SerializeField] private Text hintText;
-        [SerializeField] private float blackScreenDuration = 4f;
-        [SerializeField] private float hintDuration = 14f;
-        [SerializeField] private float fadingDuration = 3f;
-        
-        //Private variables
-        private bool screenTimerIsActive = true;
-        private bool hintTimerIsActive = true;
+        [SerializeField]
+        private AudioMixer _audioMixer;
+
+        [SerializeField]
+        private Image blackScreenImage;
+
+        [SerializeField]
+        private Text blackScreenText1;
+
+        [SerializeField]
+        private Text blackScreenText2;
+
+        [SerializeField]
+        private Text hintText;
+
+        [SerializeField]
+        private float blackScreenDuration = 3f;
+
+        [SerializeField]
+        private float hintDuration = 14f;
+
+        [SerializeField]
+        private float fadingDuration = 2f;
 
         private void Start()
         {
@@ -28,34 +39,27 @@ namespace Suntail
             blackScreenText2.gameObject.SetActive(true);
             hintText.gameObject.SetActive(true);
             _audioMixer.SetFloat("soundsVolume", -80f);
+
+            StartCoroutine(ShowBlackScreen());
+            StartCoroutine(ShowHintText());
         }
 
-        private void Update()
+        private IEnumerator ShowBlackScreen()
         {
-            //Black screen timer
-            if (screenTimerIsActive)
-            {
-                blackScreenDuration -= Time.deltaTime;
-                if (blackScreenDuration < 0)
-                {
-                    screenTimerIsActive = false;
-                    blackScreenImage.CrossFadeAlpha(0, fadingDuration, false);
-                    blackScreenText1.CrossFadeAlpha(0, fadingDuration, false);
-                    blackScreenText2.CrossFadeAlpha(0, fadingDuration, false);
-                    StartCoroutine(StartAudioFade(_audioMixer, "soundsVolume", fadingDuration, 1f));
-                }
-            }
+            yield return new WaitForSeconds(blackScreenDuration);
+            blackScreenImage.raycastTarget = false;
+            blackScreenImage.canvasRenderer.cullTransparentMesh = true;
+            blackScreenImage.CrossFadeAlpha(0, fadingDuration, false);
 
-            //Hint text timer
-            if (hintTimerIsActive)
-            {
-                hintDuration -= Time.deltaTime;
-                if (hintDuration < 0)
-                {
-                    hintTimerIsActive = false;
-                    hintText.CrossFadeAlpha(0, fadingDuration, false);
-                }
-            }
+            blackScreenText1.CrossFadeAlpha(0, fadingDuration, false);
+            blackScreenText2.CrossFadeAlpha(0, fadingDuration, false);
+            StartCoroutine(StartAudioFade(_audioMixer, "soundsVolume", fadingDuration, 1f));
+        }
+
+        private IEnumerator ShowHintText()
+        {
+            yield return new WaitForSeconds(hintDuration);
+            hintText.CrossFadeAlpha(0, fadingDuration, false);
         }
 
         //Sound fading
@@ -74,7 +78,6 @@ namespace Suntail
                 audioMixer.SetFloat(exposedParam, Mathf.Log10(newVol) * 20);
                 yield return null;
             }
-            yield break;
         }
     }
 }
