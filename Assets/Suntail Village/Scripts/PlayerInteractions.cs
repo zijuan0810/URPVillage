@@ -1,4 +1,6 @@
-﻿using UnityEngine;
+﻿using TMPro;
+using UnityEngine;
+using UnityEngine.EventSystems;
 using UnityEngine.UI;
 
 //Interacting with objects and doors
@@ -6,6 +8,9 @@ namespace Suntail
 {
     public class PlayerInteractions : MonoBehaviour
     {
+        private const string TAG_DOOR = "Door";
+        private const string TAG_ITEM = "Item";
+
         [Header("Interaction variables")]
         [Tooltip("Layer mask for interactive objects")]
         [SerializeField]
@@ -15,26 +20,13 @@ namespace Suntail
         [SerializeField]
         private float interactionDistance = 3f;
 
-        [Tooltip("Tag for door object")]
-        [SerializeField]
-        private string doorTag = "Door";
-
-        [Tooltip("Tag for pickable object")]
-        [SerializeField]
-        private string itemTag = "Item";
-
         [Tooltip("The player's main camera")]
         [SerializeField]
         private Camera mainCamera;
 
         [Tooltip("Parent object where the object to be lifted becomes")]
         [SerializeField]
-        private Transform pickupParent;
-
-        [Header("Keybinds")]
-        [Tooltip("Interaction key")]
-        [SerializeField]
-        private KeyCode interactionKey = KeyCode.E;
+        private Transform m_PickupParent;
 
         [Header("Object Following")]
         [Tooltip("Minimum speed of the lifted object")]
@@ -48,51 +40,45 @@ namespace Suntail
         [Header("UI")]
         [SerializeField]
         private Image m_AimWhite;
-        
+
         [SerializeField]
         private Image m_AimGreen;
-        
-        [Tooltip("Background object for text")]
-        [SerializeField]
-        private Image uiPanel;
 
-        [Tooltip("Text holder")]
         [SerializeField]
-        private Text panelText;
+        private Button m_OperateButton;
 
-        [Tooltip("Text when an object can be lifted")]
         [SerializeField]
-        private string itemPickUpText;
+        private TextMeshProUGUI m_OperateText;
 
-        [Tooltip("Text when an object can be drop")]
         [SerializeField]
-        private string itemDropText;
+        private PointerDownHandler m_RunHandler;
 
-        [Tooltip("Text when the door can be opened")]
         [SerializeField]
-        private string doorOpenText;
-
-        [Tooltip("Text when the door can be closed")]
-        [SerializeField]
-        private string doorCloseText;
+        private Button m_JumpButton;
 
         //Private variables.
         private PhysicsObject _physicsObject;
         private PhysicsObject _currentlyPickedUpObject;
-        private PhysicsObject _lookObject;
+        private PhysicsObject m_LookObject;
         private Quaternion _lookRotation;
         private Vector3 _raycastPosition;
         private Rigidbody _pickupRigidBody;
-        private Door _lookDoor;
+        private Door m_LookDoor;
         private float _currentSpeed = 0f;
         private float _currentDistance = 0f;
-        private CharacterController _characterController;
+        private PlayerController m_Player;
+        private CharacterController m_Character;
 
 
         private void Start()
         {
             mainCamera = Camera.main;
-            _characterController = GetComponent<CharacterController>();
+            m_Player = GetComponent<PlayerController>();
+            m_Character = GetComponent<CharacterController>();
+
+            m_JumpButton.onClick.AddListener(OnClickJump);
+            m_RunHandler.PointerDownHander = OnPointerDown;
+            m_RunHandler.PointerUpHander = OnPointerUp;
         }
 
         private void Update()
@@ -105,61 +91,39 @@ namespace Suntail
         private void Interactions()
         {
             _raycastPosition = mainCamera.ScreenToWorldPoint(new Vector3(Screen.width / 2f, Screen.height / 2f, 0));
-            RaycastHit interactionHit;
-            if (Physics.Raycast(_raycastPosition, mainCamera.transform.forward,
-                    out interactionHit, interactionDistance, interactionLayer))
+            if (Physics.Raycast(_raycastPosition, mainCamera.transform.forward, out RaycastHit interactionHit, interactionDistance,
+                    interactionLayer))
             {
-                if (interactionHit.collider.CompareTag(itemTag))
+                if (interactionHit.collider.CompareTag(TAG_ITEM))
                 {
-                    _lookObject = interactionHit.collider.GetComponentInChildren<PhysicsObject>();
+                    m_LookObject = interactionHit.collider.GetComponentInChildren<PhysicsObject>();
                     ShowItemUI();
                 }
-                else if (interactionHit.collider.CompareTag(doorTag))
+                else if (interactionHit.collider.CompareTag(TAG_DOOR))
                 {
-                    _lookDoor = interactionHit.collider.gameObject.GetComponentInChildren<Door>();
+                    m_LookDoor = interactionHit.collider.gameObject.GetComponentInChildren<Door>();
                     ShowDoorUI();
-                    if (Input.GetKeyDown(interactionKey))
-                    {
-                        _lookDoor.PlayDoorAnimation();
-                    }
                 }
             }
             else
             {
-                _lookDoor = null;
-                _lookObject = null;
-                uiPanel.gameObject.SetActive(false);
+                m_LookDoor = null;
+                m_LookObject = null;
                 m_AimGreen.gameObject.SetActive(false);
                 m_AimWhite.gameObject.SetActive(true);
-            }
-
-            if (Input.GetKeyDown(interactionKey))
-            {
-                if (_currentlyPickedUpObject == null)
-                {
-                    if (_lookObject != null)
-                    {
-                        PickUpObject();
-                    }
-                }
-                else
-                {
-                    BreakConnection();
-                }
+                m_OperateButton.gameObject.SetActive(false);
             }
         }
 
         //Disconnects from the object when the player attempts to step on the object, prevents flight on the object
         private void LegCheck()
         {
-            Vector3 spherePosition = _characterController.center + transform.position;
+            Vector3 spherePosition = m_Character.center + transform.position;
             RaycastHit legCheck;
             if (Physics.SphereCast(spherePosition, 0.3f, Vector3.down, out legCheck, 2.0f))
             {
-                if (legCheck.collider.CompareTag(itemTag))
-                {
+                if (legCheck.collider.CompareTag(TAG_ITEM))
                     BreakConnection();
-                }
             }
         }
 
@@ -168,10 +132,10 @@ namespace Suntail
         {
             if (_currentlyPickedUpObject != null)
             {
-                _currentDistance = Vector3.Distance(pickupParent.position, _pickupRigidBody.position);
+                _currentDistance = Vector3.Distance(m_PickupParent.position, _pickupRigidBody.position);
                 _currentSpeed = Mathf.SmoothStep(minSpeed, maxSpeed, _currentDistance / interactionDistance);
                 _currentSpeed *= Time.fixedDeltaTime;
-                Vector3 direction = pickupParent.position - _pickupRigidBody.position;
+                Vector3 direction = m_PickupParent.position - _pickupRigidBody.position;
                 _pickupRigidBody.velocity = direction.normalized * _currentSpeed;
             }
         }
@@ -179,8 +143,8 @@ namespace Suntail
         //Picking up an looking object
         public void PickUpObject()
         {
-            _physicsObject = _lookObject.GetComponentInChildren<PhysicsObject>();
-            _currentlyPickedUpObject = _lookObject;
+            _physicsObject = m_LookObject.GetComponentInChildren<PhysicsObject>();
+            _currentlyPickedUpObject = m_LookObject;
             _lookRotation = _currentlyPickedUpObject.transform.rotation;
             _pickupRigidBody = _currentlyPickedUpObject.GetComponent<Rigidbody>();
             _pickupRigidBody.constraints = RigidbodyConstraints.FreezeRotation;
@@ -204,34 +168,56 @@ namespace Suntail
         //Show interface elements when hovering over an object
         private void ShowDoorUI()
         {
-            uiPanel.gameObject.SetActive(true);
             m_AimGreen.gameObject.SetActive(true);
             m_AimWhite.gameObject.SetActive(false);
 
-            if (_lookDoor.doorOpen)
-            {
-                panelText.text = doorCloseText;
-            }
-            else
-            {
-                panelText.text = doorOpenText;
-            }
+            m_OperateText.text = m_LookDoor.doorOpen ? "Close" : "Open";
+            m_OperateButton.onClick.RemoveAllListeners();
+            m_OperateButton.onClick.AddListener(OperateDoor);
+            m_OperateButton.gameObject.SetActive(true);
         }
 
         private void ShowItemUI()
         {
-            uiPanel.gameObject.SetActive(true);
             m_AimGreen.gameObject.SetActive(true);
             m_AimWhite.gameObject.SetActive(false);
 
+            m_OperateText.text = _currentlyPickedUpObject == null ? "Pickup" : "Drop";
+            m_OperateButton.onClick.RemoveAllListeners();
+            m_OperateButton.onClick.AddListener(OperateItem);
+            m_OperateButton.gameObject.SetActive(true);
+        }
+
+        private void OperateDoor()
+        {
+            if (m_LookDoor != null)
+                m_LookDoor.PlayDoorAnimation();
+        }
+
+        private void OperateItem()
+        {
             if (_currentlyPickedUpObject == null)
             {
-                panelText.text = itemPickUpText;
+                if (m_LookObject != null)
+                    PickUpObject();
             }
-            else if (_currentlyPickedUpObject != null)
-            {
-                panelText.text = itemDropText;
-            }
+            else
+                BreakConnection();
+        }
+        
+        private void OnClickJump()
+        {
+            m_Player.Jump();
+        }
+        
+        private void OnPointerDown(PointerEventData eventData)
+        {
+            Global.IsRunning = true;
+        }
+
+        private void OnPointerUp(PointerEventData eventData)
+        {
+            Global.IsRunning = false;
         }
     }
 }

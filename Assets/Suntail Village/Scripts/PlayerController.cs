@@ -20,6 +20,8 @@ namespace Suntail
             public AudioClip[] footstepSounds;
         }
 
+        private const float GRAVITY = -9.81f;
+
         public TextMeshProUGUI fpsText;
         public FloatingJoystick joystickRight;
         public FloatingJoystick joystickLeft;
@@ -37,10 +39,6 @@ namespace Suntail
         [SerializeField]
         private float jumpForce;
 
-        [Tooltip("Gravity, pushing down controller when it jumping")]
-        [SerializeField]
-        private float gravity = -9.81f;
-
         [Header("Mouse Look")]
         [SerializeField]
         private Camera playerCamera;
@@ -50,13 +48,6 @@ namespace Suntail
 
         [SerializeField]
         private float mouseVerticalClamp;
-
-        [Header("Keybinds")]
-        [SerializeField]
-        private KeyCode jumpKey = KeyCode.Space;
-
-        [SerializeField]
-        private KeyCode runKey = KeyCode.LeftShift;
 
 
         [Header("Footsteps")]
@@ -87,8 +78,9 @@ namespace Suntail
         private float _currentSpeed;
         private Vector3 _moveDirection;
         private Vector3 _velocity;
+
         private CharacterController _characterController;
-        private bool _isRunning;
+        // private bool _isRunning;
 
         //Private mouselook variables
         private float _verticalRotation;
@@ -104,7 +96,7 @@ namespace Suntail
         private Texture2D _currentTexture;
         private RaycastHit _groundHit;
         private float _nextFootstep;
-        
+
         // for fps calculation.
         private int _frameCount;
         private float _elapsedTime;
@@ -158,32 +150,34 @@ namespace Suntail
         private void Movement()
         {
             if (_characterController.isGrounded && _velocity.y < 0)
-            {
                 _velocity.y = -2f;
-            }
-
-            if (Input.GetKey(jumpKey) && _characterController.isGrounded)
-            {
-                _velocity.y = Mathf.Sqrt(jumpForce * -2f * gravity);
-            }
 
             _horizontalMovement = joystickRight.Horizontal; //Input.GetAxis("Horizontal");
             _verticalMovement = joystickRight.Vertical; //Input.GetAxis("Vertical");
 
             _moveDirection = transform.forward * _verticalMovement + transform.right * _horizontalMovement;
 
-            _isRunning = Input.GetKey(runKey);
-            _currentSpeed = walkSpeed * (_isRunning ? runMultiplier : 1f);
+            _currentSpeed = walkSpeed * (Global.IsRunning ? runMultiplier : 1f);
             _characterController.Move(_moveDirection * _currentSpeed * Time.deltaTime);
 
-            _velocity.y += gravity * Time.deltaTime;
+            _velocity.y += GRAVITY * Time.deltaTime;
+            _characterController.Move(_velocity * Time.deltaTime);
+        }
+
+        public void Jump()
+        {
+            if (!_characterController.isGrounded)
+                return;
+
+            _velocity.y = Mathf.Sqrt(jumpForce * -2f * GRAVITY);
+            _velocity.y += GRAVITY * Time.deltaTime;
             _characterController.Move(_velocity * Time.deltaTime);
         }
 
         private void MouseLook()
         {
-            _xAxis = joystickLeft.Horizontal; // Input.GetAxis("Mouse X");
-            _yAxis = joystickLeft.Vertical; // Input.GetAxis("Mouse Y");
+            _xAxis = joystickLeft.Horizontal * 0.5f; // Input.GetAxis("Mouse X");
+            _yAxis = joystickLeft.Vertical * 0.5f; // Input.GetAxis("Mouse Y");
 
             _verticalRotation += -_yAxis * mouseSensivity;
             _verticalRotation = Mathf.Clamp(_verticalRotation, -mouseVerticalClamp, mouseVerticalClamp);
@@ -196,7 +190,7 @@ namespace Suntail
         {
             if (_characterController.isGrounded && (_horizontalMovement != 0 || _verticalMovement != 0))
             {
-                float currentFootstepRate = (_isRunning ? runningFootstepRate : footstepRate);
+                float currentFootstepRate = (Global.IsRunning ? runningFootstepRate : footstepRate);
                 if (_nextFootstep >= 100f)
                 {
                     {
@@ -214,7 +208,6 @@ namespace Suntail
         private void GroundChecker()
         {
             Ray checkerRay = new Ray(transform.position + (Vector3.up * 0.1f), Vector3.down);
-
             if (Physics.Raycast(checkerRay, out _groundHit, groundCheckDistance))
             {
                 if (_groundHit.collider.GetComponent<Terrain>())
@@ -245,13 +238,12 @@ namespace Suntail
             _terrainData = _terrain.terrainData;
             Vector3 terrainPosition = _terrain.transform.position;
 
-            int positionX = (int) (((controllerPosition.x - terrainPosition.x) / _terrainData.size.x) *
-                                   _terrainData.alphamapWidth);
-            int positionZ = (int) (((controllerPosition.z - terrainPosition.z) / _terrainData.size.z) *
-                                   _terrainData.alphamapHeight);
+            int positionX = (int)(((controllerPosition.x - terrainPosition.x) / _terrainData.size.x) *
+                                  _terrainData.alphamapWidth);
+            int positionZ = (int)(((controllerPosition.z - terrainPosition.z) / _terrainData.size.z) *
+                                  _terrainData.alphamapHeight);
 
             float[,,] layerData = _terrainData.GetAlphamaps(positionX, positionZ, 1, 1);
-
             float[] texturesArray = new float[layerData.GetUpperBound(2) + 1];
             for (int n = 0; n < texturesArray.Length; ++n)
                 texturesArray[n] = layerData[0, 0, n];
@@ -298,7 +290,7 @@ namespace Suntail
             }
 
             _previousClip = selectedClip;
-            
+
             return selectedClip;
         }
     }

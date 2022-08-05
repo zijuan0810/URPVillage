@@ -11,14 +11,19 @@ namespace Suntail
     public class Door : MonoBehaviour
     {
         [Tooltip("Door opening sound")]
-        [SerializeField] private AudioClip openSound;
+        [SerializeField]
+        private AudioClip openSound;
 
         [Tooltip("Door closing sound")]
-        [SerializeField] private AudioClip closeSound;
+        [SerializeField]
+        private AudioClip closeSound;
 
         [Tooltip("Additional delay in deactivating interaction, added to animation time")]
-        [SerializeField] private float doorDelayTime;
-        [HideInInspector] public bool doorOpen = false;
+        [SerializeField]
+        private float doorDelayTime;
+
+        [HideInInspector]
+        public bool doorOpen = false;
 
         //Private variables.
         private Animator _doorAnimator;
@@ -30,7 +35,8 @@ namespace Suntail
         {
             _doorAudioSource = gameObject.GetComponent<AudioSource>();
             _doorAnimator = gameObject.GetComponent<Animator>();
-            _doorOpenTime = _doorAnimator.GetCurrentAnimatorStateInfo(0).length + doorDelayTime; //Sum of animation time and additional delay
+            _doorOpenTime =
+                _doorAnimator.GetCurrentAnimatorStateInfo(0).length + doorDelayTime; //Sum of animation time and additional delay
         }
 
         //Play an animation and sound, depending on door status
@@ -43,7 +49,6 @@ namespace Suntail
                 doorOpen = true;
                 _doorAudioSource.Play();
                 StartCoroutine(PauseInteraction());
-
             }
             else if (doorOpen && !_pauseInteraction)
             {
@@ -52,9 +57,7 @@ namespace Suntail
                 doorOpen = false;
                 _doorAudioSource.Play();
                 StartCoroutine(PauseInteraction());
-
             }
-
         }
 
         //Waiting for door open time, to prevent the door from opening/closing again
@@ -64,6 +67,5 @@ namespace Suntail
             yield return new WaitForSeconds(_doorOpenTime);
             _pauseInteraction = false;
         }
-
     }
 }

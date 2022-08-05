@@ -11,16 +11,26 @@ namespace Suntail
     public class PhysicsObject : MonoBehaviour
     {
         [Tooltip("Waiting time for an item to be picked up")]
-        [SerializeField] private float waitOnPickup = 0.2f;
+        [SerializeField]
+        private float waitOnPickup = 0.2f;
 
         [Tooltip("The force by which an object is pulled away from the parent")]
-        [SerializeField] private float breakForce = 25f;
+        [SerializeField]
+        private float breakForce = 25f;
 
         [Tooltip("Array drop sounds")]
-        [SerializeField] private AudioClip[] dropClips;
-        [HideInInspector] public bool pickedUp = false;
-        [HideInInspector] public bool wasPickedUp = false;
-        [HideInInspector] public PlayerInteractions playerInteraction;
+        [SerializeField]
+        private AudioClip[] dropClips;
+
+        [HideInInspector]
+        public bool pickedUp = false;
+
+        [HideInInspector]
+        public bool wasPickedUp = false;
+
+        [HideInInspector]
+        public PlayerInteractions playerInteraction;
+
         private AudioSource _objectAudioSource;
 
         private void Awake()
@@ -37,13 +47,11 @@ namespace Suntail
                 {
                     playerInteraction.BreakConnection();
                 }
-
             }
             else if (wasPickedUp) //Check if the item has been picked up
             {
                 PlayDropSound(); //Play sound if we drop an object and it hits the ground.
             }
-
         }
 
         //Prevent the connection from breaking when you just picked up the object as it sometimes fires a collision with the ground or whatever it is touching
